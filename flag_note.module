@@ -1,11 +1,35 @@
 <?php
-// $Id$ 
+// $Id$
 
 /**
  * @file
- * Flag note module uses a new flag_link_type 'Flag note form' to allow users to attached a note to flags defined to use this link_type.
- * admins with permission of 'administer flags' can view these notes under admin/build/flags/flagged_notes_listing
+ *
+ * Flag note module uses a new flag_link_type 'Flag note form' to allow users to attached a note to flags
+ *  defined to use this link_type.
  */
+
+/**
+ * Implementation of hook_preprocess_flag().
+ */
+function flag_note_preprocess_flag(&$vars) {
+  if ($vars['flag']->link_type == 'flag_note_form') {
+    $vars['flag_classes'] .= ' flag-note';
+    if ($vars['action'] == 'flag' and module_exists('popups')) {
+      popups_add_popups();
+      $vars['flag_classes'] .= ' popups-form';
+    }
+  }
+}
+
+/**
+ * Implementation of hook_views_api().
+ */
+function flag_note_views_api() {
+  return array(
+    'api' => 2.0,
+    'path' => drupal_get_path('module', 'flag_note') .'/includes',
+  );
+}
 
 /**
  * Implementation of hook_menu().
@@ -19,85 +43,78 @@ function flag_note_menu() {
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
   );
-  $items['admin/build/flags/flagged_notes_listing'] = array(
-    'title' => 'Flag Notes',
-    'page callback' => 'flag_note_listing_page',
-    'access arguments' => array('access content'),
-    'type' => MENU_NORMAL_ITEM,
-  );
-
-  $flags = flag_get_flags();
-  foreach ($flags as $flag) {
-    $items['admin/build/flags/flagged_notes_listing/' . $flag->fid] = array(
-      'title' => $flag->name,
-      'page callback' => 'flag_note_listing_page',
-      'access arguments' => array('access content'),
-      'type' => MENU_LOCAL_TASK,
-    );
-  }
   return $items;
 }
 
-
 /**
  * Implementation of hook_nodeapi().
- * used to delete associated flag_note records from the database when a node is deleted
+ *  Deletes notes once a node is deleted.
  */
 function flag_note_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
-  global $user;
   switch ($op) {
     case 'delete':
-      db_query("DELETE FROM {flag_note} WHERE content_id = %d", $node->nid);
-      break;
+      flag_note_remove_notes(array('content_type' => 'node', 'content_id' => $node->nid));
+    break;
+  }
+}
+
+/**
+ * Implementation of hook_user().
+ *  Deletes notes once an user is deleted.
+ */
+function flag_note_user($op, &$edit, &$account, $category = NULL) {
+  switch ($op) {
+    case 'delete':
+      flag_note_remove_notes(array('content_type' => 'user', 'content_id' => $user->uid));
+    break;
+  }
+}
+
+/**
+ * Implementation of hook_comment().
+ *  Deletes notes once a comment is deleted.
+ */
+function flag_note_comment(&$a1, $op) {
+  switch ($op) {
+    case 'delete':
+      flag_note_remove_notes(array('content_type' => 'comment', 'content_id' => $a1->cid));
+    break;
   }
 }
 
 /**
  * Implementation of hook_form_alter().
- * used to delete associated flag_note records from the database when a flag is deleted
+ *  Deletes notes once a flag is deleted.
  */
-function flag_note_form_alter(&$form, $form_state, $form_id) {
-  if ($form_id == 'flag_delete_confirm') {
-    $form['#submit'][] = 'flag_note_delete_notes';
+function flag_note_form_flag_delete_confirm_alter(&$form, $form_state) {
+  $form['#submit'][] = 'flag_note_flag_delete_confirm_submit';
+}
+
+function flag_note_flag_delete_confirm_submit(&$form, $form_state) {
+  flag_note_remove_notes(array('fid' => $form_state['values']['fid']));
+}
+
+/**
+ * Called from the flag's link which is set up in hook_flag_link.
+ */
+function flag_note_page($action, $flag_name, $content_id) {
+  switch ($action) {
+    case 'flag';
+      return drupal_get_form('flag_note_form', $action, $flag_name, $content_id);
+      break;
+    case 'unflag':
+      // TODO add admin option to delete old notes
+      // by now, do nothing as we keep the old notes
+      flag_page($action, $flag_name, $content_id);
+      break;
   }
 }
 
-function flag_note_delete_notes(&$form, $form_state) {
-  $q = sprintf("DELETE FROM {flag_note} WHERE fid=%d", $form_state['values']['fid']);
-  db_query($q);
-}
-
-/** function flag_note_page is called from the flag's link
- * which is set up in hook_flag_link
- */ 
-function flag_note_page($action = 'flag', $flag_name, $content_id = '') {
-  if ($action == 'flag') {
-    return drupal_get_form('flag_note_form', $action, $flag_name, $content_id);
-  } else {
-    //delete the flag_note record
-    $flag = flag_get_flag($flag_name);
-    if (!$account) {
-      $account = $GLOBALS['user'];
-    }
-    if (!$account) {
-      $drupal_set_message(t('you do not have rights to unflag this content')); 
-    }
-    
-    $q = sprintf("SELECT fcid FROM {flag_content} WHERE fid = %d AND content_id=%d AND uid=%d", $flag->fid, $content_id, $account->uid);
-    $fcid = db_result(db_query($q));
-    if ($fcid) {
-      db_query("DELETE FROM {flag_note} WHERE fcid = %d", $fcid);
-    }
-    flag_page($action, $flag_name, $content_id);
-  }
-}
-
-function flag_note_form(&$form_state, $action = 'flag', $flag_name, $content_id = '') {
+function flag_note_form(&$form_state, $action, $flag_name, $content_id) {
   $form = array();
-  
   $form['action'] = array(
     '#type' => 'value',
-    '#value' => $action,
+    '#value' => 'flag',
   );
   $form['flag_name'] = array(
     '#type' => 'value',
@@ -107,136 +124,94 @@ function flag_note_form(&$form_state, $action = 'flag', $flag_name, $content_id 
     '#type' => 'value',
     '#value' => $content_id,
   );
-
+  $form['note'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Flag note'),
+    '#cols' => 60,
+    '#rows' => 5,
+    '#description' => t('A descriptive reason.'),
+    '#weight' => -1,
+    '#required' => TRUE,
+  );
   $flag = flag_get_flag($flag_name);
-  $path = isset($_GET['destination']) ? $_GET['destination'] : '<front>';
-  
-  $form['note'] = array (
-    '#type' => 'textfield',
-    '#title' => 'Note'
-  );
-  
-  $form['submit'] = array (
+  $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Flag as @flag_name', array('@flag_name' => $flag_name ))
+    '#value' => $flag->get_label('flag_short'),
   );
-  
   return $form;
 }
 
 function flag_note_form_submit(&$form, &$form_state) {
-  $action = $form_state['values']['action'];
-  $flag_name = $form_state['values']['flag_name'];
-  $content_id = $form_state['values']['content_id'];
-  $note = $form_state['values']['note'];
-  
-  $flag = flag_get_flag($flag_name);
-  $flag->note = $note;
-  $result=$flag->flag($action, $content_id);
-    
-  if (!$result) {
+  global $user;
+  $flag = flag_get_flag($form_state['values']['flag_name']);
+  $result = $flag->flag($form_state['values']['action'], $form_state['values']['content_id']);
+  if (empty($result)) {
     drupal_set_message(t('You are not allowed to flag, or unflag, this content.'));
   }
   else {
-    drupal_set_message($flag->get_label($action . '_message', $content_id));
-  }
-}
-
-/**
- * Implementation of hook_flag().
- */
-function flag_note_flag($action, $flag, $content_id, $account)  {
-  switch ($action) {
-    case 'flag':
-      $q = sprintf("SELECT fcid FROM {flag_content} WHERE fid = %d AND content_id=%d AND uid=%d", $flag->fid, $content_id, $account->uid);
-      $fcid = db_result(db_query($q));
-      db_query("INSERT INTO {flag_note} (fcid, note) VALUES (%d, '%s')", $fcid, $flag->note);
-      break;
+    $userflag = flag_get_user_flags($flag->content_type, $form_state['values']['content_id'], $user->uid);
+    $record = $userflag[$flag->name];
+    $record->note = $form_state['values']['note'];
+    flag_note_insert_note($record);
+    drupal_set_message($flag->get_label($action .'_message', $content_id));
   }
 }
 
 /**
  * Implementation of hook_flag_link_types().
- * defines a link type that the admin can select when editting a flag
+ *  Defines a link type that the admin can select when editting a flag
  */
 function flag_note_flag_link_types() {
-  return array ('note_form' => "Flag note form");
+  return array('flag_note_form' => t('Flag note form'));
 }
 
 /**
  * Implementation of hook_flag_link().
- * build the callback link for flags
+ *  Build the callback link for flags
  */
 function flag_note_flag_link(&$flag, $action, $content_id) {
   $token = flag_get_token($content_id);
-  switch ($action) {
-    case 'flag':
-      return array(
-        'href' => "flag/note/$action/$flag->name/$content_id",
-        'query' => drupal_get_destination() . '&token='. $token,
-    );
-      break;
-    case 'unflag':
-      return array(
-        'href' => "flag/note/$action/$flag->name/$content_id",
-        'query' => drupal_get_destination() . '&token='. $token,
-      );
-      break;
-  }
-}
-
-
-function flag_note_theme() {
-  return array (
-    'flag_note_listing' => array('arguments' => 'data')
+  return array(
+    'href' => "flag/note/$action/$flag->name/$content_id",
+    'query' => drupal_get_destination() .'&token='. $token,
   );
 }
 
-function flag_note_listing_page() {
-  if (!arg(4)) {
-    return t("Please select a Flag (above) to see Flag Notes");
+/*
+ * Database interaction
+ */
+
+function flag_note_get_schema() {
+  static $schema = NULL;
+  if (empty($schema)) {
+    $schema = drupal_get_schema('flag_note');
   }
-  $data = _flag_note_listing_data(arg(4));
-  //return dpr($data, true);
-  if(!$data) {
-    return t("No Notes :-)");
-  }
-  $output = theme('flag_note_listing', $data);
-  return $output;
+  return $schema;
 }
 
-function _flag_note_listing_data($fid) {
-  $results = db_query("SELECT count(*) as num_notes, fc.fid, n.nid, n.title, n.uid as node_uid FROM  flag_content fc inner join node n on fc.content_id = n.nid where fid = %d  group by fc.content_id order by count(*) desc, n.uid", $fid);
-  while ($result = db_fetch_array($results)) {
-    $nids[$result['nid']] = $result;
-  }
-  
-  if ($nids) {
-    foreach ($nids as &$nid) {
-      $q = sprintf("SELECT fcc.note, fc.uid, u.name FROM flag_note fcc inner join flag_content fc on fcc.fcid = fc.fcid inner join users u on u.uid = fc.uid where fc.content_id = %d AND fc.fid = %d", $nid['nid'], $fid);
-      $results = db_query($q );
-      while ($result = db_fetch_array($results)) {
-        $nid['notes'][] = $result;
-      }
-    }
-  }
-  return $nids;
-  
+function flag_note_insert_note($record) {
+  $record = (array) $record;
+  $record['note'] = filter_xss($record['note']);
+  drupal_write_record('flag_note', $record);
 }
 
-function theme_flag_note_listing($data) {
-  foreach ($data as $flagged_nid => $flagged_info) {
-    $node = node_load($flagged_nid);
-    $notes = array();
-    foreach($flagged_info['notes'] as $note_info) {
-      $note_line['user'] = l($note_info['name'], 'user/' . $note_info['uid']);
-      $note_line['note'] = $note_info['note'];
-      $notes[] = $note_line;
-    }
-    $output .= '<div class="flagged-nid-header"><b>'. $node->type . ':</b> ' .  l($node->title, 'node/' . $flagged_nid) . ' ' . $num_display . '</div>';
-    $header = array(t("User"), t("Note"));
-    $output .= theme_table($header, $notes);
+function flag_note_remove_notes($options) {
+  $schema = flag_note_get_schema();
+  foreach ($options as $field => $value) {
+    $where[] = $field .' = '. db_type_placeholder($schema['fields'][$field]['type']);
   }
-  return $output;
+  db_query('DELETE FROM {flag_note} WHERE '. implode(' AND ', $where), $options);
 }
 
+function flag_note_get_notes($options) {
+  $notes = array();
+  $schema = flag_note_get_schema();
+  foreach ($options as $field => $value) {
+    $where[] = $field .' = '. db_type_placeholder($schema['fields'][$field]['type']);
+  }
+  $result = db_query('SELECT * FROM {flag_note} WHERE '. implode(' AND ', $where), $options);
+  while ($note = db_fetch_array($result)) {
+    $notes[] = $note;
+  }
+  return $notes;
+}
