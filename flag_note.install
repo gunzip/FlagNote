@@ -1,0 +1,62 @@
+<?php
+// $Id$ 
+
+/**
+ * @file
+ * Flag note module install/schema/update hooks.
+ */
+
+/**
+ * Implementation of hook_install().
+ */
+function flag_note_install() {
+  // Load the flag API in case we want to use it when installing.
+  $success = drupal_install_schema('flag_note');
+  if ($success) {
+    drupal_set_message(st('Flag Note module installed tables successfully.'));
+  }
+  else {
+    drupal_set_message(st('The installation of Flag Note module failed.'), 'error');
+  }
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function flag_note_uninstall() {
+  drupal_uninstall_schema('flag_note');
+  drupal_set_message(t('Flag Note has been uninstalled.'));
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function flag_note_schema() {
+  $schema = array();
+
+  $schema['flag_note'] = array(
+    'fields' => array(
+      'fccid' => array(
+        'type' => 'serial',
+        'size' => 'small',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'fcid' => array(
+        'type' => 'int',
+        'size' => 'small',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'note' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('fccid'),
+  );
+  return $schema;
+}
+

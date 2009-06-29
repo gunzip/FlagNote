@@ -1,0 +1,6 @@
+; $Id$ 
+name = Flag Note
+description = Allows users to add a note while flagging content with the Flag module
+core = 6.x
+dependencies[] = flag
+package = Flags
