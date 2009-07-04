@@ -8,6 +8,22 @@
  */
 
 /**
+ * Implementation of hook_views_handlers().
+ */
+function flag_note_views_handlers() {
+  return array(
+    'info' => array(
+      'path' => drupal_get_path('module', 'flag_note') .'/includes',
+    ),
+    'handlers' => array(
+      'views_handler_field_flag_note_link_delete' => array(
+        'parent' => 'views_handler_field',
+      )
+    )
+  );
+}
+
+/**
  * Implementation of hook_views_data().
  */
 function flag_note_views_data() {
@@ -57,6 +73,15 @@ function flag_note_views_data() {
     ),
   );
 
+  // field (delete note)
+  $data['flag_note']['delete_note'] = array(
+    'field' => array(
+      'title' => t('Delete flag note'),
+      'help' => t('Provide a link to delete the note.'),
+      'handler' => 'views_handler_field_flag_note_link_delete',
+    ),
+  );
+
   // field (timestamp)
   $data['flag_note']['timestamp'] = array(
     'title' => t('Note created time'),
@@ -76,7 +101,7 @@ function flag_note_views_data() {
   // relationship (author)
   $data['flag_note']['flag_note_author_rel'] = array(
     'group' => $groupname,
-    'title' => t('Author'),
+    'title' => t('Note author'),
     'help' => t('Relate a note to its author.'),
     'relationship' => array(
       'label' => t('flag_note_author'),

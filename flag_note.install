@@ -20,6 +20,7 @@ function flag_note_install() {
  * Implementation of hook_uninstall().
  */
 function flag_note_uninstall() {
+  db_query("DELETE FROM {variable} WHERE name LIKE 'flag_note_%'");
   drupal_uninstall_schema('flag_note');
 }
 
