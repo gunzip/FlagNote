@@ -3,4 +3,5 @@ name = Flag Note
 description = Allows users to add notes while flagging content with the Flag module
 core = 6.x
 dependencies[] = flag
+dependencies[] = views
 package = Flags
