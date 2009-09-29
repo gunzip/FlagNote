@@ -110,31 +110,66 @@ function flag_note_delete_confirm_submit($form, &$form_state) {
 }
 
 /**
- * Add an option to disable keeping old notes
+ * Add options to
+ *  disable keeping old notes
+ *  add a max length to a note
+ *  change the flag note labels and help text
  */
 function flag_note_form_flag_form_alter(&$form, $form_state) {
   drupal_add_js(drupal_get_path('module', 'flag_note') .'/flag_note.js');
+
   $form['flag_note'] = array(
     '#type' => 'fieldset',
     '#name' => t('Flag note options'),
     '#tree' => TRUE,
     '#weight' => 100,
-    '#attributes' => array('id' => 'flag-note-options')
+    '#attributes' => array('id' => 'flag-note-options'),
   );
+
   $form['flag_note']['disable_history'] = array(
     '#type' => 'checkbox',
     '#default_value' => variable_get('flag_note_history_disabled_'. $form['#flag']->name, 0),
     '#title' => t('Disable flag history'),
     '#description' => t('If checked, user\'s former notes are deleted when unflagging so '.
-        'only the last one will be stored.<br />Beware: if checked and in case of a global flag '.
+        'only the last one will be stored.<br />Beware: if checked and in case of a global flag, '.
         'notes added by <em>other</em> users get deleted when unflagging.')
   );
+
+  $form['flag_note']['title'] = array(
+    '#type' => 'textfield',
+    '#default_value' => variable_get('flag_note_title_'. $form['#flag']->name, t('Flag note')),
+    '#title' => t('Flag note form title'),
+  );
+
+  $form['flag_note']['label'] = array(
+    '#type' => 'textfield',
+    '#default_value' => variable_get('flag_note_label_'. $form['#flag']->name, t('Flag note')),
+    '#title' => t('Flag note textarea label'),
+  );
+
+  $form['flag_note']['help'] = array(
+    '#type' => 'textfield',
+    '#default_value' => variable_get('flag_note_help_'. $form['#flag']->name, t('A descriptive reason.')),
+    '#title' => t('Flag note help text (behind textarea)'),
+  );
+
+  $form['flag_note']['maxlength'] = array(
+    '#type' => 'textfield',
+    '#default_value' => variable_get('flag_note_maxlength_'. $form['#flag']->name, 0),
+    '#title' => t('Flag note max length'),
+    '#description' => t('0 for unlimited'),
+    '#length' => 8,
+  );
+
   $form['#submit'][] = 'flag_note_flag_form_submit';
 }
 
 function flag_note_flag_form_submit($form, &$form_state) {
-  variable_set('flag_note_history_disabled_'. $form['#flag']->name,
-      $form_state['values']['flag_note']['disable_history']);
+  variable_set('flag_note_title_'. $form['#flag']->name, $form_state['values']['flag_note']['title']);
+  variable_set('flag_note_label_'. $form['#flag']->name, $form_state['values']['flag_note']['label']);
+  variable_set('flag_note_help_'. $form['#flag']->name, $form_state['values']['flag_note']['help']);
+  variable_set('flag_note_history_disabled_'. $form['#flag']->name, $form_state['values']['flag_note']['disable_history']);
+  variable_set('flag_note_maxlength_'. $form['#flag']->name, $form_state['values']['flag_note']['maxlength']);
 }
 
 function _flag_note_history_disabled($flag_name) {
@@ -232,13 +267,21 @@ function flag_note_form(&$form_state, $action, $flag_name, $content_id) {
   );
   $form['note'] = array(
     '#type' => 'textarea',
-    '#title' => t('Flag note'),
+    '#title' => variable_get('flag_note_label_'. $flag_name, t('Flag note')),
     '#cols' => 60,
     '#rows' => 5,
-    '#description' => t('A descriptive reason.'),
+    '#description' => variable_get('flag_note_help_'. $flag_name, t('A descriptive reason.')),
     '#weight' => -1,
     '#required' => TRUE,
   );
+
+  $maxlen = variable_get('flag_note_maxlength_'. $flag_name, 0);
+  if ($maxlen > 0) {
+    $form['note']['#maxlength'] = $maxlen;
+  }
+
+  drupal_set_title(variable_get('flag_note_title_'. $flag_name, t('Flag note')));
+
   $flag = flag_get_flag($flag_name);
   $form['submit'] = array(
     '#type' => 'submit',
