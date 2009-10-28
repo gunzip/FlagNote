@@ -248,6 +248,9 @@ function flag_note_page($action, $flag_name, $content_id) {
       }
       flag_page($action, $flag_name, $content_id);
       break;
+    default:
+      return flag_page($action, $flag_name, $content_id);
+      break;
   }
 }
 
