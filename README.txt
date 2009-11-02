@@ -51,9 +51,10 @@ Todo
 ====
 Someday, only if there'll be demand for these ones:
 
-  * edit old notes
+  * critical: fix views filters
+  * decouple history and notes
   * store notes when unflagging
-  * think about using cck nodes for notes
+  * token support
 
 Extra:
 

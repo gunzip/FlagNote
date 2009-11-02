@@ -14,7 +14,8 @@
  *    'view any note' goes through views permissions.
  */
 function flag_note_perm() {
-  return array('delete own flag note', 'delete any flag note');
+  return array('delete own flag note', 'delete any flag note',
+    'edit own flag note', 'edit any flag note');
 }
 
 /**
@@ -56,25 +57,34 @@ function flag_note_menu() {
     'title' => t('Flag Note delete'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('flag_note_delete_confirm', 1),
-    'access callback' => 'flag_note_access_delete',
-    'access arguments' => array(1),
+    'access callback' => 'flag_note_has_access',
+    'access arguments' => array(2, 1),
+    'type' => MENU_CALLBACK,
+  );
+  $items['flagnote/%/edit'] = array(
+    'title' => t('Flag Note edit'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('flag_note_edit_form', 1),
+    'access callback' => 'flag_note_has_access',
+    'access arguments' => array(2, 1),
     'type' => MENU_CALLBACK,
   );
   return $items;
 }
 
 /**
- * Global flags (uid = 0) can only be deleted by users that have the
- * 'delete any flag note' right.
+ * Global flags (uid = 0) can only be edited/deleted by users that have the
+ * 'edit/delete any flag note' right.
+ * @param type 'edit' or 'delete'
  */
-function flag_note_access_delete($fnid, $uid = NULL) {
+function flag_note_has_access($type, $fnid, $uid = NULL) {
   if (empty($fnid)) {
     return FALSE;
   }
-  if (user_access('delete any flag note')) {
+  if (user_access($type .' any flag note')) {
     return TRUE;
   }
-  if (!user_access('delete own flag note')) {
+  if (!user_access($type .' own flag note')) {
     return FALSE;
   }
   if (empty($uid)) {
@@ -106,6 +116,62 @@ function flag_note_delete_confirm_submit($form, &$form_state) {
     else {
       drupal_set_message(t('Your note cannot be deleted.'), 'error');
     }
+  }
+}
+
+function flag_note_edit_form(&$form_state, $fnid) {
+  $flag_note = current(flag_note_get_notes(array('fnid' => $fnid)));
+  if (empty($flag_note)) {
+    return FALSE;
+  }
+
+  $flag = flag_get_flag(NULL, $flag_note['fid']);
+  if (empty($flag)) {
+    return FALSE;
+  }
+
+  $form = array();
+
+  $form['fnid'] = array(
+    '#type' => 'value',
+    '#value' => $flag_note['fnid']
+  );
+
+  $form['note'] = array(
+    '#type' => 'textarea',
+    '#title' => variable_get('flag_note_label_'. $flag->name, t('Flag note')),
+    '#cols' => 60,
+    '#rows' => 5,
+    '#description' => variable_get('flag_note_help_'. $flag->name, t('A descriptive reason.')),
+    '#weight' => -1,
+    '#required' => TRUE,
+    '#default_value' => $flag_note['note'],
+  );
+
+  $maxlen = variable_get('flag_note_maxlength_'. $flag->name, 0);
+  if ($maxlen > 0) {
+    $form['note']['#maxlength'] = $maxlen;
+  }
+
+  drupal_set_title(variable_get('flag_note_title_'. $flag->name, t('Flag note')));
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => $flag->get_label('flag_short'),
+  );
+
+  $form['cancel'] = array(
+      '#value' => l(t('Cancel'), $_GET['destination'])
+  );
+
+  return $form;
+}
+
+function flag_note_edit_form_submit(&$form, $form_state) {
+  $flag_note = current(flag_note_get_notes(array('fnid' => $form_state['values']['fnid'])));
+  $flag_note['note'] = $form_state['values']['note'];
+  if (flag_note_update_note($flag_note)) {
+    drupal_set_message('Changes were succesfully saved');
   }
 }
 
@@ -349,6 +415,10 @@ function flag_note_insert_note($record) {
   $record = (array) $record;
   $record['note'] = filter_xss($record['note']);
   return drupal_write_record('flag_note', $record);
+}
+
+function flag_note_update_note($options) {
+  return drupal_write_record('flag_note', $options, 'fnid');
 }
 
 function flag_note_remove_notes($options) {

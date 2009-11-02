@@ -18,7 +18,10 @@ function flag_note_views_handlers() {
     'handlers' => array(
       'views_handler_field_flag_note_link_delete' => array(
         'parent' => 'views_handler_field',
-      )
+      ),
+      'views_handler_field_flag_note_link_edit' => array(
+        'parent' => 'views_handler_field',
+      ),
     )
   );
 }
@@ -79,6 +82,15 @@ function flag_note_views_data() {
       'title' => t('Delete flag note'),
       'help' => t('Provide a link to delete the note.'),
       'handler' => 'views_handler_field_flag_note_link_delete',
+    ),
+  );
+
+  // field (edit note)
+  $data['flag_note']['edit_note'] = array(
+    'field' => array(
+      'title' => t('Edit flag note'),
+      'help' => t('Provide a link to edit the note.'),
+      'handler' => 'views_handler_field_flag_note_link_edit',
     ),
   );
 

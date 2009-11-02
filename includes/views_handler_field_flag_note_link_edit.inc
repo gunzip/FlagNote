@@ -1,9 +1,9 @@
 <?php
 // $Id$
 /**
- * Field handler to present a link to delete a note.
+ * Field handler to present a link to modify a note.
  */
-class views_handler_field_flag_note_link_delete extends views_handler_field {
+class views_handler_field_flag_note_link_edit extends views_handler_field {
   function construct() {
     parent::construct();
     $this->additional_fields['fnid'] = 'fnid';
@@ -29,10 +29,10 @@ class views_handler_field_flag_note_link_delete extends views_handler_field {
   function render($values) {
     $fnid = $values->{$this->aliases['fnid']};
     $uid  = $values->{$this->aliases['uid']};
-    if (flag_note_has_access('delete', $fnid, $uid)) {
-      $text = (!empty($this->options['text']) ? $this->options['text'] : t('remove note'));
-      return l($text, "flagnote/$fnid/delete", array('query' => drupal_get_destination(),
-          'attributes' => array('class' => 'flag-note-delete')));
+    if (flag_note_has_access('edit', $fnid, $uid)) {
+      $text = (!empty($this->options['text']) ? $this->options['text'] : t('edit note'));
+      return l($text, "flagnote/$fnid/edit", array('query' => drupal_get_destination(),
+          'attributes' => array('class' => 'flag-note-edit')));
     }
   }
 }
