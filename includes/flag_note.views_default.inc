@@ -1,4 +1,10 @@
 <?php
+// $Id$
+/**
+ * @file
+ *
+ * Flag note module default views (for each content type).
+ */
 
 /**
  * Implementation of hook_views_default_views().
@@ -209,7 +215,7 @@ function flag_note_views_default_views() {
       'default' => '-1',
     ));
     $handler = $view->new_display('page', 'Page', 'page_1');
-    $handler->override_option('path', 'flagnote/view/flag_' . $flag->name); // MANUALLY
+    $handler->override_option('path', 'flagnote/view/flag_'. $flag->name); // MANUALLY
     $handler->override_option('menu', array(
       'type' => 'none',
       'title' => '',

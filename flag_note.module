@@ -98,7 +98,7 @@ function flag_note_has_access($type, $fnid, $uid = NULL) {
 }
 
 function flag_note_delete_confirm(&$form_state, $fnid) {
- $form['fnid'] = array(
+  $form['fnid'] = array(
     '#type' => 'value',
     '#value' => $fnid,
   );
@@ -361,6 +361,10 @@ function flag_note_form(&$form_state, $action, $flag_name, $content_id) {
 
 function flag_note_form_submit(&$form, &$form_state) {
   $flag = flag_get_flag($form_state['values']['flag_name']);
+  //
+  // Next line is compulsory to get the token later, I hope it won't break anything.
+  //
+  $flag->flag_note = $form_state['values']['note'];
   $result = $flag->flag($form_state['values']['action'], $form_state['values']['content_id']);
   if (empty($result)) {
     drupal_set_message(t('You are not allowed to flag, or unflag, this content.'));
@@ -440,4 +444,26 @@ function flag_note_get_notes($options) {
     $notes[] = $note;
   }
   return $notes;
+}
+
+/**
+ * Implementation of hook_token_list().
+ */
+function flag_note_token_list($type = 'all') {
+  $tokens = array();
+  if ($type == 'flag-action') {
+    $tokens['flag note']['flag-note'] = t('The note associated with the flagging action.');
+  }
+  return $tokens;
+}
+
+/**
+ * Implementation of hook_token_values().
+ */
+function flag_note_token_values($type, $object = NULL, $options = array()) {
+  $values = array();
+  if ($type == 'flag' and !empty($object)) {
+    $values['flag-note'] = isset($object->flag_note) ? $object->flag_note : '';
+  }
+  return $values;
 }

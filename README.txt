@@ -47,6 +47,8 @@ By default only the admin can delete flag notes.
 
 'View notes' rights are implied by views access rights.
 
+There's a new [flag-note] token when using this with flag_action and token modules active.
+
 Todo
 ====
 Someday, only if there'll be demand for these ones:
@@ -54,7 +56,6 @@ Someday, only if there'll be demand for these ones:
   * critical: fix views filters
   * decouple history and notes
   * store notes when unflagging
-  * token support
 
 Extra:
 

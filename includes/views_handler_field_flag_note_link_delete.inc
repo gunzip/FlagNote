@@ -1,6 +1,8 @@
 <?php
 // $Id$
 /**
+ * @file
+ *
  * Field handler to present a link to delete a note.
  */
 class views_handler_field_flag_note_link_delete extends views_handler_field {
