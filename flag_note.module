@@ -451,7 +451,7 @@ function flag_note_get_notes($options) {
  */
 function flag_note_token_list($type = 'all') {
   $tokens = array();
-  if ($type == 'flag-action') {
+  if ($type == 'flag') {
     $tokens['flag note']['flag-note'] = t('The note associated with the flagging action.');
   }
   return $tokens;
