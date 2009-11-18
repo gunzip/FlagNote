@@ -17,7 +17,7 @@ class views_handler_field_flag_note_link_edit extends views_handler_field {
   }
   function option_definition() {
     $options = parent::option_definition();
-    $options['text'] = array('default' => '', 'translatable' => TRUE);
+    $options['text'] = array('default' => 'edit', 'translatable' => TRUE);
     return $options;
   }
   function options_form(&$form, &$form_state) {
@@ -32,8 +32,7 @@ class views_handler_field_flag_note_link_edit extends views_handler_field {
     $fnid = $values->{$this->aliases['fnid']};
     $uid  = $values->{$this->aliases['uid']};
     if (flag_note_has_access('edit', $fnid, $uid)) {
-      $text = (!empty($this->options['text']) ? $this->options['text'] : t('edit note'));
-      return l($text, "flagnote/$fnid/edit", array('query' => drupal_get_destination(),
+      return l($this->options['text'], "flagnote/$fnid/edit", array('query' => drupal_get_destination(),
           'attributes' => array('class' => 'flag-note-edit')));
     }
   }

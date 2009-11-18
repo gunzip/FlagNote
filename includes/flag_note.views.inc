@@ -133,6 +133,8 @@ function flag_note_views_data() {
       'base' => 'flag_note',
       'base field' => 'content_id',
       'relationship field' => 'nid',
+      'handler' => 'flag_handler_relationship_content',
+      'flag_type' => 'node',
     ),
   );
 
@@ -146,6 +148,8 @@ function flag_note_views_data() {
       'base' => 'flag_note',
       'base field' => 'content_id',
       'relationship field' => 'uid',
+      'handler' => 'flag_handler_relationship_content',
+      'flag_type' => 'user',
     ),
   );
 
@@ -159,6 +163,8 @@ function flag_note_views_data() {
       'base' => 'flag_note',
       'base field' => 'content_id',
       'relationship field' => 'cid',
+      'handler' => 'flag_handler_relationship_content',
+      'flag_type' => 'comment',
     ),
   );
 

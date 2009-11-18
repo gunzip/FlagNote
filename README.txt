@@ -34,35 +34,30 @@ In the same administration form you can opt to keep old notes (flag history)
 or delete them when unflagging. Once this settings are saved, a form (or a popup)
 with a textfield will appear when users flag content.
 
-Notes and their history are listed through views (adding a Flag Note relationship).
-To list content associated notes you must either activate at least one between
-the predefined views or create a new one.
+Notes and their history are listed through views (adding a "Flag Note" relationship).
+To list content associated notes ** YOU MUST CREATE A NEW VIEW **
+(there are no predefined ones) with a Flag Note relationship.
 
-Some default views are provided to show notes about nodes and users (as tabs)
-or relative to a specific flag (as a separate page). These default views are disabled by default.
-Check their settings (ie. access rights) and enable/clone them.
+You don't need to (and in fact, you should not) mix plain "Flag" relationships
+with "Flag Note" relationships in views.
 
-Go to admin/user/permissions to assign 'delete notes' permissions to users.
-By default only the admin can delete flag notes.
+Go to admin/user/permissions to assign 'delete / edit notes' permissions to users.
+By default only the admin can delete / edit flag notes.
 
 'View notes' rights are implied by views access rights.
 
-There's a new [flag-note] token when using this with flag_action and token modules active.
+There's a new [flag-note] token when using this module with
+flag_action (or/and rules) and if the token module is active.
 
 Todo
 ====
 Someday, only if there'll be demand for these ones:
 
-  * critical: fix views filters
+  * provide default views ?
   * decouple history and notes
   * store notes when unflagging
 
-Extra:
-
-  * reduce duplicates in default views (now it's done through sql DISTINCT) with a filter
-    $this->query->add_where(flag_note_node.uid = flag_content_node.uid OR flag_content_node.uid IS NULL)
-
 Credits
 =======
-pahariwalla @ http://drupal.org/user/70811
-gunzip @ http://drupal.org/user/25151
+gunzip @ http://drupal.org/user/25151 (current mantainer)
+pahariwalla @ http://drupal.org/user/70811 (project founder)
