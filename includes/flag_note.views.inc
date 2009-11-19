@@ -110,6 +110,19 @@ function flag_note_views_data() {
     ),
   );
 
+  // relationship (flag_content)
+  $data['flag_note']['flag_note_content_rel'] = array(
+    'group' => $groupname,
+    'title' => t('Hide flag note history.'),
+    'help' => t('Filter out old notes if content has been unflagged (check: require this relationship).'),
+    'relationship' => array(
+      'label' => t('flag_note_conent'),
+      'base' => 'flag_content',
+      'base field' => 'fcid',
+      'relationship field' => 'fcid',
+    ),
+  );
+
   // relationship (author)
   $data['flag_note']['flag_note_author_rel'] = array(
     'group' => $groupname,
