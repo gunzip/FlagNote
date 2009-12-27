@@ -388,7 +388,10 @@ function flag_note_form_submit(&$form, &$form_state) {
  *  Defines a link type that the admin can select when editting a flag
  */
 function flag_note_flag_link_types() {
-  return array('flag_note_form' => t('Flag note form'));
+  return array('flag_note_form' => array(
+    'title' => t('Flag note form'),
+    'description' => t('The user will be able to relate a note to the flagging operation.')
+  ));
 }
 
 /**
