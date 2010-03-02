@@ -309,7 +309,7 @@ function flag_note_page($action, $flag_name, $content_id) {
         }
         else {
           flag_note_remove_notes(array('content_type' => $flag->content_type, 'content_id' => $content_id,
-              'uid' => $uid));
+              'uid' => $GLOBALS['user']->uid));
         }
       }
       flag_page($action, $flag_name, $content_id);
