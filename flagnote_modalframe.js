@@ -12,7 +12,8 @@
           $('#modalframe-example-messages').hide().html(statusMessages).show('slow');
         }
         if (args && args.message) {
-          setTimeout(function() { alert(args.message); }, 500);
+          alert(args.message);
+          window.location.href = window.location.href;
         }
       }
 
