@@ -24,7 +24,12 @@ function flag_note_perm() {
 function flag_note_preprocess_flag(&$vars) {
   if ($vars['flag']->link_type == 'flag_note_form') {
     $vars['flag_classes'] .= ' flag-note';
-    if ($vars['action'] == 'flag' and module_exists('popups')) {
+    if ($vars['action'] == 'flag' and module_exists('modalframe')) {
+      drupal_add_js(drupal_get_path('module', 'flag_note') .'/flagnote_modalframe.js');
+      modalframe_parent_js();
+      $vars['flag_classes'] .= ' modalframe-flagnote';
+    }
+    elseif ($vars['action'] == 'flag' and module_exists('popups')) {
       popups_add_popups();
       $vars['flag_classes'] .= ' popups-form';
     }
@@ -321,6 +326,9 @@ function flag_note_page($action, $flag_name, $content_id) {
 }
 
 function flag_note_form(&$form_state, $action, $flag_name, $content_id) {
+  if (module_exists('modalframe')) {
+    modalframe_child_js();
+  }
   $form = array();
   $form['action'] = array(
     '#type' => 'value',
@@ -380,6 +388,11 @@ function flag_note_form_submit(&$form, &$form_state) {
     $record->note = $form_state['values']['note'];
     flag_note_insert_note($record);
     drupal_set_message($flag->get_label($form_state['values']['action'] .'_message', $content_id));
+  }
+  if (module_exists('modalframe')) {
+    modalframe_close_dialog(array(
+      'message' => t('Changes were succesfully saved'),
+    ));
   }
 }
 
