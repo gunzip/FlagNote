@@ -393,7 +393,7 @@ function flag_note_form(&$form_state, $action, $flag_name, $content_id) {
   $flag = flag_get_flag($flag_name);
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => $flag->get_label('flag_short'),
+    '#value' => $flag->get_label('flag_short', $content_id),
   );
   return $form;
 }
