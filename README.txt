@@ -49,11 +49,18 @@ By default only the admin can delete / edit flag notes.
 There's a new [flag-note] token when using this module with
 flag_action (or/and rules) and if the token module is active.
 
+Odds and ends
+=============
+
+d4rkngel provided a patch for Facebook status
+(http://drupal.org/project/fbstatus) module integration:
+
+http://drupal.org/node/875896
+
 Todo
 ====
 Someday, only if there'll be demand for these ones:
 
-  * provide default views ?
   * decouple history and notes
   * store notes when unflagging
 
