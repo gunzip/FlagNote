@@ -177,7 +177,7 @@ function flag_note_edit_form(&$form_state, $fnid) {
 
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => $flag->get_label('flag_short'),
+    '#value' => $flag->get_label('flag_short', $flag_note['content_id']),
   );
 
   $form['cancel'] = array(
