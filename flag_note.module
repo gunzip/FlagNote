@@ -4,18 +4,23 @@
 /**
  * @file
  *
- * Flag note module uses a new flag_link_type 'Flag note form' to allow users to attached a note to flags
- *  defined to use this link_type.
+ * Flag note module uses a new flag_link_type 'Flag note form' to allow users 
+ * to attached a note to flags defined to use this link_type.
  */
 
 /**
  * Implementation of hook_perm().
- *    We assume that 'create flag note' is handled by the 'create flag' permission
- *    'view any note' goes through views permissions.
+ *
+ * We assume that 'create flag note' is handled by the 'create flag' permission
+ * 'view any note' goes through views permissions.
  */
 function flag_note_perm() {
-  return array('delete own flag note', 'delete any flag note',
-    'edit own flag note', 'edit any flag note');
+  return array(
+    'delete own flag note', 
+    'delete any flag note',
+    'edit own flag note', 
+    'edit any flag note',
+  );
 }
 
 /**
@@ -24,12 +29,12 @@ function flag_note_perm() {
 function flag_note_preprocess_flag(&$vars) {
   if ($vars['flag']->link_type == 'flag_note_form') {
     $vars['flag_classes'] .= ' flag-note';
-    if ($vars['action'] == 'flag' and module_exists('modalframe')) {
+    if ($vars['action'] == 'flag' && module_exists('modalframe')) {
       drupal_add_js(drupal_get_path('module', 'flag_note') .'/flagnote_modalframe.js');
       modalframe_parent_js();
       $vars['flag_classes'] .= ' modalframe-flagnote';
     }
-    elseif ($vars['action'] == 'flag' and module_exists('popups')) {
+    elseif ($vars['action'] == 'flag' && module_exists('popups')) {
       popups_add_popups();
       $vars['flag_classes'] .= ' popups-form';
     }
@@ -80,6 +85,7 @@ function flag_note_menu() {
 /**
  * Global flags (uid = 0) can only be edited/deleted by users that have the
  * 'edit/delete any flag note' right.
+ *
  * @param type 'edit' or 'delete'
  */
 function flag_note_has_access($type, $fnid, $uid = NULL) {
@@ -102,6 +108,9 @@ function flag_note_has_access($type, $fnid, $uid = NULL) {
   return ($uid === $GLOBALS['user']->uid);
 }
 
+/**
+ * Form for confirming deletion of a note.
+ */
 function flag_note_delete_confirm(&$form_state, $fnid) {
   $form['fnid'] = array(
     '#type' => 'value',
@@ -113,6 +122,9 @@ function flag_note_delete_confirm(&$form_state, $fnid) {
   );
 }
 
+/**
+ * Submit handler for confirming deletion of a note.
+ */
 function flag_note_delete_confirm_submit($form, &$form_state) {
   if ($form_state['values']['confirm']) {
     if (flag_note_remove_notes(array('fnid' => $form_state['values']['fnid']))) {
@@ -124,6 +136,9 @@ function flag_note_delete_confirm_submit($form, &$form_state) {
   }
 }
 
+/**
+ * Form for editing a note.
+ */
 function flag_note_edit_form(&$form_state, $fnid) {
   $flag_note = current(flag_note_get_notes(array('fnid' => $fnid)));
   if (empty($flag_note)) {
@@ -172,6 +187,9 @@ function flag_note_edit_form(&$form_state, $fnid) {
   return $form;
 }
 
+/**
+ * Submit handler for editing a note.
+ */
 function flag_note_edit_form_submit(&$form, $form_state) {
   $flag_note = current(flag_note_get_notes(array('fnid' => $form_state['values']['fnid'])));
   $flag_note['note'] = $form_state['values']['note'];
@@ -181,10 +199,10 @@ function flag_note_edit_form_submit(&$form, $form_state) {
 }
 
 /**
- * Add options to
- *  disable keeping old notes
- *  add a max length to a note
- *  change the flag note labels and help text
+ * Add options to the flag form:
+ *  - disable note history
+ *  - add a max length to a note
+ *  - change the flag note labels and help text
  */
 function flag_note_form_flag_form_alter(&$form, $form_state) {
   drupal_add_js(drupal_get_path('module', 'flag_note') .'/flag_note.js');
@@ -202,8 +220,8 @@ function flag_note_form_flag_form_alter(&$form, $form_state) {
     '#default_value' => variable_get('flag_note_history_disabled_'. $form['#flag']->name, 0),
     '#title' => t('Disable flag history'),
     '#description' => t('If checked, user\'s former notes are deleted when unflagging so '.
-        'only the last one will be stored.<br />Beware: if checked and in case of a global flag, '.
-        'notes added by <em>other</em> users get deleted when unflagging.')
+      'only the last one will be stored.<br />Beware: if checked and in case of a global flag, '.
+      'notes added by <em>other</em> users get deleted when unflagging.'),
   );
 
   $form['flag_note']['title'] = array(
@@ -235,6 +253,9 @@ function flag_note_form_flag_form_alter(&$form, $form_state) {
   $form['#submit'][] = 'flag_note_flag_form_submit';
 }
 
+/**
+ * Additional submit handler added to the flag form.
+ */
 function flag_note_flag_form_submit($form, &$form_state) {
   variable_set('flag_note_title_'. $form['#flag']->name, $form_state['values']['flag_note']['title']);
   variable_set('flag_note_label_'. $form['#flag']->name, $form_state['values']['flag_note']['label']);
@@ -243,13 +264,17 @@ function flag_note_flag_form_submit($form, &$form_state) {
   variable_set('flag_note_maxlength_'. $form['#flag']->name, $form_state['values']['flag_note']['maxlength']);
 }
 
+/**
+ * Helper function to determine if a flag's history has been disabled.
+ */
 function _flag_note_history_disabled($flag_name) {
   return variable_get('flag_note_history_disabled_'. $flag_name, 0);
 }
 
 /**
  * Implementation of hook_nodeapi().
- *  Deletes notes once a node is deleted.
+ *
+ * Deletes notes once a node is deleted.
  */
 function flag_note_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
   switch ($op) {
@@ -261,7 +286,8 @@ function flag_note_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
 
 /**
  * Implementation of hook_user().
- *  Deletes notes once an user is deleted.
+ *
+ * Deletes notes once an user is deleted.
  */
 function flag_note_user($op, &$edit, &$account, $category = NULL) {
   switch ($op) {
@@ -273,7 +299,8 @@ function flag_note_user($op, &$edit, &$account, $category = NULL) {
 
 /**
  * Implementation of hook_comment().
- *  Deletes notes once a comment is deleted.
+ *
+ * Deletes notes once a comment is deleted.
  */
 function flag_note_comment(&$a1, $op) {
   switch ($op) {
@@ -285,11 +312,16 @@ function flag_note_comment(&$a1, $op) {
 
 /**
  * Implementation of hook_form_alter().
- *  Deletes notes once a flag is deleted.
+ *
+ * Deletes notes once a flag is deleted.
  */
 function flag_note_form_flag_delete_confirm_alter(&$form, $form_state) {
   $form['#submit'][] = 'flag_note_flag_delete_confirm_submit';
 }
+
+/**
+ * Additional submit handler added to the flag delete confirmation form.
+ */
 function flag_note_flag_delete_confirm_submit($form, &$form_state) {
   flag_note_remove_notes(array('fid' => $form_state['values']['fid']));
 }
@@ -303,18 +335,14 @@ function flag_note_page($action, $flag_name, $content_id) {
       return drupal_get_form('flag_note_form', $action, $flag_name, $content_id);
       break;
     case 'unflag':
-      //
-      // Delete old note if history is disabled
-      //
+      // Delete old note if history is disabled.
       if (_flag_note_history_disabled($flag_name)) {
         $flag = flag_get_flag($flag_name);
         if ($flag->global) {
-          flag_note_remove_notes(array('content_type' => $flag->content_type, 'content_id' => $content_id
-              ));
+          flag_note_remove_notes(array('content_type' => $flag->content_type, 'content_id' => $content_id));
         }
         else {
-          flag_note_remove_notes(array('content_type' => $flag->content_type, 'content_id' => $content_id,
-              'uid' => $GLOBALS['user']->uid));
+          flag_note_remove_notes(array('content_type' => $flag->content_type, 'content_id' => $content_id, 'uid' => $GLOBALS['user']->uid));
         }
       }
       flag_page($action, $flag_name, $content_id);
@@ -325,6 +353,9 @@ function flag_note_page($action, $flag_name, $content_id) {
   }
 }
 
+/**
+ * Form for entering a new note.
+ */
 function flag_note_form(&$form_state, $action, $flag_name, $content_id) {
   if (module_exists('modalframe')) {
     modalframe_child_js();
@@ -367,28 +398,31 @@ function flag_note_form(&$form_state, $action, $flag_name, $content_id) {
   return $form;
 }
 
+/**
+ * Submit handler for adding a new note.
+ */
 function flag_note_form_submit(&$form, &$form_state) {
   $flag = flag_get_flag($form_state['values']['flag_name']);
-  //
-  // Next line is compulsory to get the token later, I hope it won't break anything.
-  //
+  
+  // Add the note to the flag object.
   $flag->flag_note = $form_state['values']['note'];
   $result = $flag->flag($form_state['values']['action'], $form_state['values']['content_id']);
   if (empty($result)) {
     drupal_set_message(t('You are not allowed to flag, or unflag, this content.'));
   }
   else {
-    $userflag = flag_get_user_flags($flag->content_type,
-        $form_state['values']['content_id'], $GLOBALS['user']->uid);
+    $userflag = flag_get_user_flags($flag->content_type, $form_state['values']['content_id'], $GLOBALS['user']->uid);
     $record = $userflag[$flag->name];
-    //
-    // Now uid = 0 if is a global flag. Anyway we want to store the note author so we change it
-    //
+
+    // Now uid = 0 if is a global flag. Anyway we want to store the note author
+    // so we change it.
     $record->uid  = $GLOBALS['user']->uid;
     $record->note = $form_state['values']['note'];
     flag_note_insert_note($record);
     drupal_set_message($flag->get_label($form_state['values']['action'] .'_message', $content_id));
   }
+  
+  // Modalframe support.
   if (module_exists('modalframe')) {
     modalframe_close_dialog(array(
       'message' => t('Changes were succesfully saved'),
@@ -398,7 +432,8 @@ function flag_note_form_submit(&$form, &$form_state) {
 
 /**
  * Implementation of hook_flag_link_types().
- *  Defines a link type that the admin can select when editting a flag
+ *
+ * Defines a link type that the admin can select when editting a flag.
  */
 function flag_note_flag_link_types() {
   return array('flag_note_form' => array(
@@ -409,7 +444,8 @@ function flag_note_flag_link_types() {
 
 /**
  * Implementation of hook_flag_link().
- *  Build the callback link for flags
+ *
+ * Build the callback link for flags.
  */
 function flag_note_flag_link($flag, $action, $content_id) {
   $token = flag_get_token($content_id);
@@ -419,8 +455,9 @@ function flag_note_flag_link($flag, $action, $content_id) {
   );
 }
 
-/*
- * Database interaction
+/**
+ * @defgroup Database interaction.
+ * @{
  */
 
 function flag_note_get_schema() {
@@ -461,6 +498,10 @@ function flag_note_get_notes($options) {
   }
   return $notes;
 }
+
+/**
+ * @}
+ */
 
 /**
  * Implementation of hook_token_list().
