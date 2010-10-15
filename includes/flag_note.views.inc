@@ -136,6 +136,19 @@ function flag_note_views_data() {
     ),
   );
 
+  // relationship (predefined notes)
+  $data['flag_note']['flag_note_predefined_rel'] = array(
+    'group' => $groupname,
+    'title' => t('Predefined note'),
+    'help' => t('Reason associated with the note.'),
+    'relationship' => array(
+      'label' => t('flag_note_tid'),
+      'base' => 'term_data',
+      'base field' => 'tid',
+      'relationship field' => 'tid',
+    ),
+  );
+
   // relationship (notes on nodes)
   $data['node']['flag_note_node_rel'] = array(
     'group' => $groupname,

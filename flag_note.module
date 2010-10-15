@@ -4,7 +4,7 @@
 /**
  * @file
  *
- * Flag note module uses a new flag_link_type 'Flag note form' to allow users 
+ * Flag note module uses a new flag_link_type 'Flag note form' to allow users
  * to attached a note to flags defined to use this link_type.
  */
 
@@ -16,9 +16,9 @@
  */
 function flag_note_perm() {
   return array(
-    'delete own flag note', 
+    'delete own flag note',
     'delete any flag note',
-    'edit own flag note', 
+    'edit own flag note',
     'edit any flag note',
   );
 }
@@ -242,6 +242,27 @@ function flag_note_form_flag_form_alter(&$form, $form_state) {
     '#title' => t('Flag note help text (behind textarea)'),
   );
 
+  $form['flag_note']['flag_note_vocab'] = array(
+    '#type' => 'select',
+    '#title' => t('Taxonomy vocabulary to use for predefined notes'),
+    '#default_value' => variable_get('flag_note_vocab_'. $form['#flag']->name, FALSE),
+    '#options' => _flag_note_get_vocabs(),
+    '#description' =>
+      t('Flaggers will be able to select one of the predefined notes (terms) along with the textarea.')
+  );
+
+  $form['flag_note']['flag_note_vocab_label'] = array(
+    '#type' => 'textfield',
+    '#default_value' => variable_get('flag_note_vocab_label_'. $form['#flag']->name, t('Reason')),
+    '#title' => t('Label for predefined notes'),
+  );
+
+  $form['flag_note']['flag_note_vocab_help'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Help text for predefined notes'),
+    '#default_value' => variable_get('flag_note_vocab_help_'. $form['#flag']->name, t('Please select a reason')),
+  );
+
   $form['flag_note']['maxlength'] = array(
     '#type' => 'textfield',
     '#default_value' => variable_get('flag_note_maxlength_'. $form['#flag']->name, 0),
@@ -262,6 +283,11 @@ function flag_note_flag_form_submit($form, &$form_state) {
   variable_set('flag_note_help_'. $form['#flag']->name, $form_state['values']['flag_note']['help']);
   variable_set('flag_note_history_disabled_'. $form['#flag']->name, $form_state['values']['flag_note']['disable_history']);
   variable_set('flag_note_maxlength_'. $form['#flag']->name, $form_state['values']['flag_note']['maxlength']);
+  if ($form_state['values']['flag_note']['flag_note_vocab']) {
+    variable_set('flag_note_vocab_'. $form['#flag']->name, $form_state['values']['flag_note']['flag_note_vocab']);
+    variable_set('flag_note_vocab_label_'. $form['#flag']->name, $form_state['values']['flag_note']['flag_note_vocab_label']);
+    variable_set('flag_note_vocab_help_'. $form['#flag']->name, $form_state['values']['flag_note']['flag_note_vocab_help']);
+  }
 }
 
 /**
@@ -373,12 +399,22 @@ function flag_note_form(&$form_state, $action, $flag_name, $content_id) {
     '#type' => 'value',
     '#value' => $content_id,
   );
+  if (variable_get('flag_note_vocab_'. $flag_name, FALSE)) {
+    $form['tid'] = array(
+      '#type' => 'select',
+      '#title' => variable_get('flag_note_vocab_label_'. $flag_name, ''),
+      '#description' => variable_get('flag_note_vocab_help_'. $flag_name, ''),
+      '#required' => FALSE,
+      '#weight' => -2,
+      '#options'  => _flag_note_get_predefined_values($flag_name),
+    );
+  }
   $form['note'] = array(
     '#type' => 'textarea',
-    '#title' => variable_get('flag_note_label_'. $flag_name, t('Flag note')),
+    '#title' => variable_get('flag_note_label_'. $flag_name, ''),
     '#cols' => 60,
     '#rows' => 5,
-    '#description' => variable_get('flag_note_help_'. $flag_name, t('A descriptive reason.')),
+    '#description' => variable_get('flag_note_help_'. $flag_name, ''),
     '#weight' => -1,
     '#required' => TRUE,
   );
@@ -388,7 +424,7 @@ function flag_note_form(&$form_state, $action, $flag_name, $content_id) {
     $form['note']['#maxlength'] = $maxlen;
   }
 
-  drupal_set_title(variable_get('flag_note_title_'. $flag_name, t('Flag note')));
+  drupal_set_title(variable_get('flag_note_title_'. $flag_name, ''));
 
   $flag = flag_get_flag($flag_name);
   $form['submit'] = array(
@@ -403,7 +439,7 @@ function flag_note_form(&$form_state, $action, $flag_name, $content_id) {
  */
 function flag_note_form_submit(&$form, &$form_state) {
   $flag = flag_get_flag($form_state['values']['flag_name']);
-  
+
   // Add the note to the flag object.
   $flag->flag_note = $form_state['values']['note'];
   $result = $flag->flag($form_state['values']['action'], $form_state['values']['content_id']);
@@ -418,10 +454,11 @@ function flag_note_form_submit(&$form, &$form_state) {
     // so we change it.
     $record->uid  = $GLOBALS['user']->uid;
     $record->note = $form_state['values']['note'];
+    $record->tid = ($form_state['values']['tid'] > 0 ? $form_state['values']['tid'] : NULL);
     flag_note_insert_note($record);
     drupal_set_message($flag->get_label($form_state['values']['action'] .'_message', $content_id));
   }
-  
+
   // Modalframe support.
   if (module_exists('modalframe')) {
     modalframe_close_dialog(array(
@@ -523,4 +560,31 @@ function flag_note_token_values($type, $object = NULL, $options = array()) {
     $values['flag-note'] = isset($object->flag_note) ? $object->flag_note : '';
   }
   return $values;
+}
+
+/**
+ * Get list of vocabs.
+ */
+function _flag_note_get_vocabs() {
+  $vocabs = taxonomy_get_vocabularies();
+  $options[0] = t("- none -");
+  foreach ($vocabs as $vid => $vocab) {
+    $options[$vid] = t($vocab->name);
+  }
+  return $options;
+}
+
+/**
+ * Get predefined reasons for the given flag.
+ */
+function _flag_note_get_predefined_values($flag_name) {
+  $options = array(0 => t('---'));
+  $vid = variable_get('flag_note_vocab_'. $flag_name, FALSE);
+  if ($vid) {
+    $terms = db_query("SELECT tid, name from {term_data} where vid = %d", $vid);
+    while ($term_obj = db_fetch_object($terms)) {
+      $options[$term_obj->tid] = $term_obj->name;
+    }
+  }
+  return $options;
 }

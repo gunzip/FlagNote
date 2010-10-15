@@ -38,8 +38,11 @@ Notes and their history are listed through views (adding a "Flag Note" relations
 To list content associated notes ** YOU MUST CREATE A NEW VIEW **
 (there are no predefined ones) with a Flag Note relationship.
 
-You don't need to (and in fact, you should not) mix plain "Flag" relationships
-with "Flag Note" relationships in views.
+Eventually it is possible to select a predefined reason 
+(taken from a taxonomy vocabulary) along with the note text.
+
+** IMPORTANT ** you don't need to (and in fact, you should not) mix 
+plain "Flag" relationships with "Flag Note" relationships in views.
 
 Go to admin/user/permissions to assign 'delete / edit notes' permissions to users.
 By default only the admin can delete / edit flag notes.
