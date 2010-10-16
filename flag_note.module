@@ -57,14 +57,14 @@ function flag_note_views_api() {
 function flag_note_menu() {
   $items = array();
   $items['flag/note'] = array(
-    'title' => t('Flag Note'),
+    'title' => 'Flag Note',
     'page callback' => 'flag_note_page',
     'access callback' => 'user_access',
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
   );
   $items['flagnote/%/delete'] = array(
-    'title' => t('Flag Note delete'),
+    'title' => 'Flag Note delete',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('flag_note_delete_confirm', 1),
     'access callback' => 'flag_note_has_access',
@@ -72,7 +72,7 @@ function flag_note_menu() {
     'type' => MENU_CALLBACK,
   );
   $items['flagnote/%/edit'] = array(
-    'title' => t('Flag Note edit'),
+    'title' => 'Flag Note edit',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('flag_note_edit_form', 1),
     'access callback' => 'flag_note_has_access',
@@ -194,7 +194,7 @@ function flag_note_edit_form_submit(&$form, $form_state) {
   $flag_note = current(flag_note_get_notes(array('fnid' => $form_state['values']['fnid'])));
   $flag_note['note'] = $form_state['values']['note'];
   if (flag_note_update_note($flag_note)) {
-    drupal_set_message('Changes were succesfully saved');
+    drupal_set_message(t('Changes succesfully saved'));
   }
 }
 
@@ -263,6 +263,24 @@ function flag_note_form_flag_form_alter(&$form, $form_state) {
     '#default_value' => variable_get('flag_note_vocab_help_'. $form['#flag']->name, t('Please select a reason')),
   );
 
+  $form['flag_note']['default_text'] = array(
+    '#type' => 'textarea',
+    '#default_value' => variable_get('flag_note_default_text_'. $form['#flag']->name, NULL),
+    '#title' => t('Note default text'),
+  );
+
+  if (module_exists('token')) {
+    $form['flag_note']['token_help'] = array(
+      '#title' => t('Replacement patterns'),
+      '#type' => 'fieldset',
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+    );
+    $form['flag_note']['token_help']['help'] = array(
+      '#value' => theme('token_help', $form['#flag']->content_type),
+    );
+  }
+
   $form['flag_note']['maxlength'] = array(
     '#type' => 'textfield',
     '#default_value' => variable_get('flag_note_maxlength_'. $form['#flag']->name, 0),
@@ -282,6 +300,7 @@ function flag_note_flag_form_submit($form, &$form_state) {
   variable_set('flag_note_label_'. $form['#flag']->name, $form_state['values']['flag_note']['label']);
   variable_set('flag_note_help_'. $form['#flag']->name, $form_state['values']['flag_note']['help']);
   variable_set('flag_note_history_disabled_'. $form['#flag']->name, $form_state['values']['flag_note']['disable_history']);
+  variable_set('flag_note_default_text_'. $form['#flag']->name, $form_state['values']['flag_note']['default_text']);
   variable_set('flag_note_maxlength_'. $form['#flag']->name, $form_state['values']['flag_note']['maxlength']);
   if ($form_state['values']['flag_note']['flag_note_vocab']) {
     variable_set('flag_note_vocab_'. $form['#flag']->name, $form_state['values']['flag_note']['flag_note_vocab']);
@@ -409,6 +428,15 @@ function flag_note_form(&$form_state, $action, $flag_name, $content_id) {
       '#options'  => _flag_note_get_predefined_values($flag_name),
     );
   }
+
+  $default_value = variable_get('flag_note_default_text_'. $flag_name, '');
+
+  if (module_exists('token')) {
+    $flag = flag_get_flag($flag_name);
+    $default_value = $flag->replace_tokens($default_value,
+      array_flip($flag->get_labels_token_types()), $content_id);
+  }
+
   $form['note'] = array(
     '#type' => 'textarea',
     '#title' => variable_get('flag_note_label_'. $flag_name, ''),
@@ -417,6 +445,7 @@ function flag_note_form(&$form_state, $action, $flag_name, $content_id) {
     '#description' => variable_get('flag_note_help_'. $flag_name, ''),
     '#weight' => -1,
     '#required' => TRUE,
+    '#default_value' => $default_value,
   );
 
   $maxlen = variable_get('flag_note_maxlength_'. $flag_name, 0);
