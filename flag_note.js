@@ -1,5 +1,6 @@
 ;if (Drupal && Drupal.jsEnabled) {
   Drupal.behaviors.flag_note = function(context) {
+
     var $cbs = $('input[@name=link_type]');
     if (!$cbs.length) {
       return ;
@@ -18,5 +19,23 @@
         $fopts.slideUp();
       }
     });
+
+    $vocSelect = $('#edit-flag-note-flag-note-vocab');
+    $vocOpts = $('#edit-flag-note-flag-note-vocab-label-wrapper, '+
+                 '#edit-flag-note-flag-note-vocab-help-wrapper');
+
+    if ($vocSelect.val() == 0) {
+      $vocOpts.hide();
+    }
+
+    $('#edit-flag-note-flag-note-vocab').change(function(e){
+      if ($(this).val() > 0) {
+        $vocOpts.slideDown();
+      }
+      else {
+        $vocOpts.slideUp();
+      }
+    });
+
   };
 }

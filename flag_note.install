@@ -31,14 +31,26 @@ function flag_note_schema() {
   $flag_content = drupal_get_schema_unprocessed('flag', 'flag_content');
   $flag_content['fields']['fcid']['type'] = 'int';
   $schema['flag_note']['fields'] = array_merge($flag_content['fields'],
-      array('note' => array('type' => 'text', 'not null' => TRUE))
-  );
+    array(
+      'note' => array('type' => 'text', 'not null' => TRUE),
+      'tid'  => array('type' => 'int', 'not null' => FALSE),
+  ));
   $schema['flag_note']['fields']['fnid'] = array('type' => 'serial');
   $schema['flag_note']['primary key'] = array('fnid');
   $schema['flag_note']['indexes'] = array(
     'fcid' => array('fcid'),
     'fid' => array('fid'),
+    'tid' => array('tid'),
     'content_type_content_id' => array('content_type', 'content_id'),
   );
   return $schema;
+}
+
+function flag_note_update_6100() {
+  $ret = array();
+
+  db_add_field($ret, 'flag_note', 'tid', array('type' => 'int', 'not null' => FALSE));
+  db_add_index($ret, 'flag_note', 'tid', array('tid'));
+
+  return $ret;
 }
