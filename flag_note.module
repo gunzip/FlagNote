@@ -485,7 +485,7 @@ function flag_note_form_submit(&$form, &$form_state) {
     $record->note = $form_state['values']['note'];
     $record->tid = ($form_state['values']['tid'] > 0 ? $form_state['values']['tid'] : NULL);
     flag_note_insert_note($record);
-    drupal_set_message($flag->get_label($form_state['values']['action'] .'_message', $content_id));
+    drupal_set_message($flag->get_label($form_state['values']['action'] .'_message', $form_state['values']['content_id']));
   }
 
   // Modalframe support.
