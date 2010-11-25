@@ -307,6 +307,9 @@ function flag_note_flag_form_submit($form, &$form_state) {
     variable_set('flag_note_vocab_label_'. $form['#flag']->name, $form_state['values']['flag_note']['flag_note_vocab_label']);
     variable_set('flag_note_vocab_help_'. $form['#flag']->name, $form_state['values']['flag_note']['flag_note_vocab_help']);
   }
+  else {
+    variable_del('flag_note_vocab_'. $form['#flag']->name);
+  }
 }
 
 /**
