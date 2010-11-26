@@ -56,7 +56,7 @@ function flag_note_views_api() {
  */
 function flag_note_menu() {
   $items = array();
-  $items['flag/note'] = array(
+  $items['flagnote/action'] = array(
     'title' => 'Flag Note',
     'page callback' => 'flag_note_page',
     'access callback' => 'user_access',
@@ -378,6 +378,7 @@ function flag_note_flag_delete_confirm_submit($form, &$form_state) {
  * Called from the flag's link which is set up in hook_flag_link.
  */
 function flag_note_page($action, $flag_name, $content_id) {
+  $flag = flag_get_flag($flag_name);
   switch ($action) {
     case 'flag';
       return drupal_get_form('flag_note_form', $action, $flag_name, $content_id);
@@ -385,7 +386,6 @@ function flag_note_page($action, $flag_name, $content_id) {
     case 'unflag':
       // Delete old note if history is disabled.
       if (_flag_note_history_disabled($flag_name)) {
-        $flag = flag_get_flag($flag_name);
         if ($flag->global) {
           flag_note_remove_notes(array('content_type' => $flag->content_type, 'content_id' => $content_id));
         }
@@ -393,10 +393,10 @@ function flag_note_page($action, $flag_name, $content_id) {
           flag_note_remove_notes(array('content_type' => $flag->content_type, 'content_id' => $content_id, 'uid' => $GLOBALS['user']->uid));
         }
       }
-      flag_page($action, $flag_name, $content_id);
+      flag_page($action, $flag, $content_id);
       break;
     default:
-      return flag_page($action, $flag_name, $content_id);
+      return flag_page($action, $flag, $content_id);
       break;
   }
 }
@@ -519,7 +519,7 @@ function flag_note_flag_link_types() {
 function flag_note_flag_link($flag, $action, $content_id) {
   $token = flag_get_token($content_id);
   return array(
-    'href' => "flag/note/$action/$flag->name/$content_id",
+    'href' => "flagnote/action/$action/$flag->name/$content_id",
     'query' => drupal_get_destination() .'&token='. $token,
   );
 }

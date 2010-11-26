@@ -54,3 +54,9 @@ function flag_note_update_6200() {
 
   return $ret;
 }
+
+function flag_note_update_6201() {
+  $ret = array();
+  cache_clear_all();
+  return $ret;
+}
