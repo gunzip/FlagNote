@@ -127,6 +127,11 @@ function flag_note_delete_confirm(&$form_state, $fnid) {
  */
 function flag_note_delete_confirm_submit($form, &$form_state) {
   if ($form_state['values']['confirm']) {
+    $flag_note = current(flag_note_get_notes(array('fnid' => $form_state['values']['fnid'])));
+    $flag = flag_get_flag(NULL, $flag_note['fid']);
+    if (variable_get('flag_note_delete_unflags_'. $flag->name, FALSE)) {
+      $flag->flag('unflag', $flag_note['content_id'], user_load($flag_note['uid']));
+    }
     if (flag_note_remove_notes(array('fnid' => $form_state['values']['fnid']))) {
       drupal_set_message(t('Your note was successfully deleted.'));
     }
@@ -224,6 +229,15 @@ function flag_note_form_flag_form_alter(&$form, $form_state) {
       'notes added by <em>other</em> users get deleted when unflagging.'),
   );
 
+  $form['flag_note']['delete_unflags'] = array(
+    '#type' => 'checkbox',
+    '#default_value' => variable_get('flag_note_delete_unflags_'. $form['#flag']->name, 0),
+    '#title' => t('Unflag item when deleting note'),
+    '#description' => t('If checked, items are unflagged when deleting flag note.'.
+      '<br />Beware: if checked and in case of a global flag, '.
+      'items flagged by <em>other</em> users get unflagged as well.'),
+  );
+
   $form['flag_note']['title'] = array(
     '#type' => 'textfield',
     '#default_value' => variable_get('flag_note_title_'. $form['#flag']->name, t('Flag note')),
@@ -300,6 +314,7 @@ function flag_note_flag_form_submit($form, &$form_state) {
   variable_set('flag_note_label_'. $form['#flag']->name, $form_state['values']['flag_note']['label']);
   variable_set('flag_note_help_'. $form['#flag']->name, $form_state['values']['flag_note']['help']);
   variable_set('flag_note_history_disabled_'. $form['#flag']->name, $form_state['values']['flag_note']['disable_history']);
+  variable_set('flag_note_delete_unflags_'. $form['#flag']->name, $form_state['values']['flag_note']['delete_unflags']);
   variable_set('flag_note_default_text_'. $form['#flag']->name, $form_state['values']['flag_note']['default_text']);
   variable_set('flag_note_maxlength_'. $form['#flag']->name, $form_state['values']['flag_note']['maxlength']);
   if ($form_state['values']['flag_note']['flag_note_vocab']) {
@@ -613,8 +628,8 @@ function _flag_note_get_predefined_values($flag_name) {
   $options = array(0 => t('---'));
   $vid = variable_get('flag_note_vocab_'. $flag_name, FALSE);
   if ($vid) {
-    $terms = db_query("SELECT tid, name from {term_data} where vid = %d", $vid);
-    while ($term_obj = db_fetch_object($terms)) {
+    $terms = taxonomy_get_tree($vid);
+    foreach ($terms as $term_obj) {
       $options[$term_obj->tid] = $term_obj->name;
     }
   }
