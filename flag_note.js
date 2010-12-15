@@ -1,7 +1,7 @@
 ;if (Drupal && Drupal.jsEnabled) {
   Drupal.behaviors.flag_note = function(context) {
 
-    var $cbs = $('input[@name=link_type]');
+    var $cbs = $('input[name=link_type]');
     if (!$cbs.length) {
       return ;
     }
@@ -22,7 +22,8 @@
 
     $vocSelect = $('#edit-flag-note-flag-note-vocab');
     $vocOpts = $('#edit-flag-note-flag-note-vocab-label-wrapper, '+
-                 '#edit-flag-note-flag-note-vocab-help-wrapper');
+                 '#edit-flag-note-flag-note-vocab-help-wrapper, '+
+                 '#edit-flag-note-hide-text-wrapper');
 
     if ($vocSelect.val() == 0) {
       $vocOpts.hide();
