@@ -440,22 +440,31 @@ function flag_note_form(&$form_state, $action, $flag_name, $content_id) {
     modalframe_child_js();
   }
   $form = array();
-  $form['action'] = array(
+
+  drupal_set_title(variable_get('flag_note_title_'. $flag_name, ''));
+
+  $form['flag_note'] = array(
+    '#type' => 'fieldset',
+    '#tree' => FALSE,
+    '#title' => variable_get('flag_note_title_'. $flag_name, ''),
+  );
+
+  $form['flag_note']['action'] = array(
     '#type' => 'value',
     '#value' => 'flag',
   );
-  $form['flag_name'] = array(
+  $form['flag_note']['flag_name'] = array(
     '#type' => 'value',
     '#value' => $flag_name,
   );
-  $form['content_id'] = array(
+  $form['flag_note']['content_id'] = array(
     '#type' => 'value',
     '#value' => $content_id,
   );
 
   $vid = variable_get('flag_note_vocab_'. $flag_name, FALSE);
   if ($vid) {
-    $form['tid'] = array(
+    $form['flag_note']['tid'] = array(
       '#title' => variable_get('flag_note_vocab_label_'. $flag_name, ''),
       '#description' => variable_get('flag_note_vocab_help_'. $flag_name, ''),
       '#required' => FALSE,
@@ -472,7 +481,7 @@ function flag_note_form(&$form_state, $action, $flag_name, $content_id) {
   }
 
   if (!variable_get('flag_note_hide_text_'. $flag_name, FALSE)) {
-    $form['note'] = array(
+    $form['flag_note']['note'] = array(
       '#type' => 'textarea',
       '#title' => variable_get('flag_note_label_'. $flag_name, ''),
       '#cols' => 60,
@@ -485,14 +494,12 @@ function flag_note_form(&$form_state, $action, $flag_name, $content_id) {
 
     $maxlen = variable_get('flag_note_maxlength_'. $flag_name, 0);
     if ($maxlen > 0) {
-      $form['note']['#maxlength'] = $maxlen;
+      $form['flag_note']['note']['#maxlength'] = $maxlen;
     }
   }
 
-  drupal_set_title(variable_get('flag_note_title_'. $flag_name, ''));
-
   $flag = flag_get_flag($flag_name);
-  $form['submit'] = array(
+  $form['flag_note']['submit'] = array(
     '#type' => 'submit',
     '#value' => $flag->get_label('flag_short', $content_id),
   );
