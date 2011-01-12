@@ -465,10 +465,11 @@ function flag_note_form(&$form_state, $action, $flag_name, $content_id) {
 
   $vid = variable_get('flag_note_vocab_'. $flag_name, FALSE);
   if (module_exists('taxonomy') and $vid) {
+    $vocabulary = taxonomy_vocabulary_load($vid);
     $form['flag_note']['tid'] = array(
       '#title' => variable_get('flag_note_vocab_label_'. $flag_name, ''),
       '#description' => variable_get('flag_note_vocab_help_'. $flag_name, ''),
-      '#required' => FALSE,
+      '#required' => $vocabulary->required,
       '#weight' => -2,
     ) + taxonomy_form($vid);
   }
@@ -541,10 +542,14 @@ function flag_note_form_submit(&$form, &$form_state) {
     drupal_set_message($flag->get_label($form_state['values']['action'] .'_message', $form_state['values']['content_id']));
   }
 
-  // Modalframe support.
   if (module_exists('modalframe')) {
+    $status_messages = array();
+    foreach (drupal_get_messages($display, FALSE) as $type => $messages) {
+      $status_messages = array_merge($status_messages, $messages);
+    }
     modalframe_close_dialog(array(
-      'message' => t('Changes were succesfully saved'),
+      'newLink' => $flag->theme('unflag', $form_state['values']['content_id'], TRUE),
+      'status'  => (count($status_messages) > 1 ? '- ' : '') . implode("\n- ", $status_messages),
     ));
   }
 }
