@@ -531,15 +531,17 @@ function flag_note_form_submit(&$form, &$form_state) {
   }
   else {
     $userflag = flag_get_user_flags($flag->content_type, $form_state['values']['content_id'], $GLOBALS['user']->uid);
-    $record = $userflag[$flag->name];
+    if ($userflag) {
+      $record = $userflag[$flag->name];
 
-    // Now uid = 0 if is a global flag. Anyway we want to store the note author
-    // so we change it.
-    $record->uid  = $GLOBALS['user']->uid;
-    $record->note = $form_state['values']['note'];
-    $record->tid = ($form_state['values']['tid'] > 0 ? $form_state['values']['tid'] : NULL);
-    flag_note_insert_note($record);
-    drupal_set_message($flag->get_label($form_state['values']['action'] .'_message', $form_state['values']['content_id']));
+      // Now uid = 0 if is a global flag. Anyway we want to store the note author
+      // so we change it.
+      $record->uid  = $GLOBALS['user']->uid;
+      $record->note = $form_state['values']['note'];
+      $record->tid = ($form_state['values']['tid'] > 0 ? $form_state['values']['tid'] : NULL);
+      flag_note_insert_note($record);
+      drupal_set_message($flag->get_label($form_state['values']['action'] .'_message', $form_state['values']['content_id']));
+    }
   }
 
   if (module_exists('modalframe')) {
