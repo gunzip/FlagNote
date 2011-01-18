@@ -305,7 +305,7 @@ function flag_note_form_flag_form_alter(&$form, $form_state) {
       '#collapsed' => TRUE,
     );
     $form['flag_note']['token_help']['help'] = array(
-      '#value' => theme('token_help', $form['#flag']->content_type),
+      '#value' => theme('token_help', array('global',  $form['#flag']->content_type)),
     );
   }
 
