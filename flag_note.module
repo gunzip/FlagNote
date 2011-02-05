@@ -150,7 +150,7 @@ function flag_note_edit_form(&$form_state, $fnid) {
     return FALSE;
   }
   $flag = flag_get_flag(NULL, $flag_note['fid']);
-  $form = _flag_note_form(&$form_state, NULL, $flag->name, NULL, $flag_note);
+  $form = _flag_note_form($form_state, NULL, $flag->name, NULL, $flag_note);
   $form['fnid'] = array('#type' => 'value', '#value' => $flag_note['fnid']);
   $form['cancel'] = array('#value' => l(t('Cancel'), $_GET['destination']));
   return $form;
@@ -472,7 +472,7 @@ function flag_note_form(&$form_state, $action, $flag_name, $content_id) {
   if (module_exists('modalframe')) {
     modalframe_child_js();
   }
-  return _flag_note_form(&$form_state, $action, $flag_name, $content_id);
+  return _flag_note_form($form_state, $action, $flag_name, $content_id);
 }
 
 /**
