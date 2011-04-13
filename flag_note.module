@@ -432,7 +432,7 @@ function _flag_note_form(&$form_state, $action, $flag_name, $content_id, $flag_n
       '#weight' => -2,
       '#default_value' => $flag_note['tid'],
     );
-    if (module_exists('hierarchical_select')
+    if (module_exists('hs_taxonomy')
             and variable_get('taxonomy_hierarchical_select_'. $vid, FALSE)) {
       module_load_include('inc', 'hierarchical_select', 'includes/common');
       $form['flag_note']['tid'] += array(
