@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  *
@@ -306,7 +305,7 @@ function flag_note_flag_form_validate($form, &$form_state) {
 function flag_note_flag($action, $flag, $content_id, $account) {
   if ($action == 'unflag' and $flag->link_type == 'flag_note_form') {
     if ($flag->flag_note_history_disabled) {
-      $search = array('content_type' => $flag->content_type, 'content_id' => $content_id);
+      $search = array('fid' => $flag->fid, 'content_type' => $flag->content_type, 'content_id' => $content_id);
       if (!$flag->global) {
         $search['uid'] = $account->uid;
       }
@@ -324,6 +323,13 @@ function flag_note_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
   switch ($op) {
     case 'delete':
       flag_note_remove_notes(array('content_type' => 'node', 'content_id' => $node->nid));
+    break;
+    case 'insert':
+    case 'update':
+      // Handles inline flag / note editing in node form
+      if (is_array($node->flag)) {
+        _flag_note_node_form_submit($node);
+      }
     break;
   }
 }
@@ -398,7 +404,7 @@ function _flag_note_form(&$form_state, $action, $flag_name, $content_id, $flag_n
   $form['flag_note'] = array(
     '#type' => 'fieldset',
     '#tree' => FALSE,
-    '#title' => $flag->flag_note_fieldset,
+    '#title' => filter_xss($flag->flag_note_fieldset),
   );
 
   if (empty($flag_note)) {
@@ -420,32 +426,43 @@ function _flag_note_form(&$form_state, $action, $flag_name, $content_id, $flag_n
   if (module_exists('taxonomy') and $vid) {
     $vocabulary = taxonomy_vocabulary_load($vid);
     $form['flag_note']['tid'] = array(
-      '#title' => $flag->flag_note_vocab_label,
-      '#description' => $flag->flag_note_vocab_help,
+      '#title' => filter_xss($flag->flag_note_vocab_label),
+      '#description' => filter_xss($flag->flag_note_vocab_help),
       '#required' => $vocabulary->required,
       '#weight' => -2,
       '#default_value' => $flag_note['tid'],
-    ) + taxonomy_form($vid);
-  }
-
-  if (empty($flag_note)) {
-    $default_value = $flag->flag_note_default_text;
-    if (module_exists('token')) {
-      $default_value = $flag->replace_tokens($default_value,
-        array_flip($flag->get_labels_token_types()), $content_id);
+    );
+    if (module_exists('hierarchical_select')
+            and variable_get('taxonomy_hierarchical_select_'. $vid, FALSE)) {
+      $form['flag_note']['tid'] += array(
+        '#type' => 'hierarchical_select',
+        '#size' => 1,
+        '#config' => array(
+          'module' => 'hs_taxonomy',
+          'params' => array('vid' => $vid),
+        ) + hierarchical_select_common_config_get('taxonomy-'. $vid));
+    }
+    else {
+      $form['flag_note']['tid'] += taxonomy_form($vid);
     }
   }
-  else {
+
+  $default_value = $flag->flag_note_default_text;
+  if (!empty($flag_note)) {
     $default_value = $flag_note['note'];
+  }
+  elseif (is_numeric($content_id) and module_exists('token')) {
+    $default_value = $flag->replace_tokens($default_value,
+      array_flip($flag->get_labels_token_types()), $content_id);
   }
 
   if (!$flag->flag_note_hide_text) {
     $form['flag_note']['note'] = array(
       '#type' => 'textarea',
-      '#title' => $flag->flag_note_label,
+      '#title' => filter_xss($flag->flag_note_label),
       '#cols' => 60,
       '#rows' => 5,
-      '#description' => $flag->flag_note_help,
+      '#description' => filter_xss($flag->flag_note_help),
       '#weight' => -1,
       '#required' => TRUE,
       '#default_value' => $default_value,
@@ -457,10 +474,12 @@ function _flag_note_form(&$form_state, $action, $flag_name, $content_id, $flag_n
     }
   }
 
-  $form['flag_note']['submit'] = array(
-    '#type' => 'submit',
-    '#value' => $flag->get_label('flag_short', $content_id),
-  );
+  if (is_numeric($content_id)) {
+    $form['flag_note']['submit'] = array(
+      '#type' => 'submit',
+      '#value' => $flag->get_label('flag_short', $content_id),
+    );
+  }
   return $form;
 }
 
@@ -644,4 +663,70 @@ function _flag_note_get_vocabs() {
     $options[$vid] = t($vocab->name);
   }
   return $options;
+}
+
+/**
+ * Implementation of hook_form_alter().
+ *
+ *  Merge flag note fields into node edit form
+ */
+function flag_note_form_alter(&$form, &$form_state, $form_id) {
+  if (isset($form['type']) and isset($form['#node']) and is_array($form['flag'])
+          and ($form_id == $form['type']['#value'] .'_node_form')) {
+    $weight = 0;
+    foreach ($form['flag'] as $name => $value) {
+      if ($form['flag'][$name]['#type'] == 'checkbox') {
+        $flag = flag_get_flag($name);
+        if ($flag->link_type != 'flag_note_form') {
+          continue ;
+        }
+        $form['flag'][$name]['#weight'] = $weight++;
+        // Gets current (last) flag note if exists
+        if ($form['#node']->nid) {
+          $userflag = (array) flag_get_user_flags($flag->content_type, $form['#node']->nid);
+          if ($userflag[$name]) {
+            $record = (array) $userflag[$name];
+            $record['uid']  = $GLOBALS['user']->uid;
+            $note = array_pop(flag_note_get_notes($record));
+          }
+        }
+        $form['flag']['flag_note_'. $name] = current(
+                _flag_note_form(&$form_state, 'flag', $name, $form['#node']->nid, $note));
+        $form['flag']['flag_note_'. $name]['#weight'] = $weight++;
+        $form['flag']['flag_note_'. $name]['#tree'] = TRUE;
+        unset($form['flag']['flag_note_'. $name]['submit']);
+      }
+    }
+  }
+}
+
+/**
+ *  Insert new notes or update new ones once the node form is submitted
+ *  (old notes are automatically removed when some content is unflagged).
+ */
+function _flag_note_node_form_submit($node) {
+  foreach (array_filter($node->flag, 'is_int') as $name => $state) {
+    if ($state and isset($node->flag['flag_note_'. $name])) {
+      $userflag = (array) flag_get_user_flags('node', $node->nid);
+      if ($userflag[$name]) {
+        $record = (array) $userflag[$name];
+        $record['uid'] = $GLOBALS['user']->uid;
+        $note = array_pop(flag_note_get_notes($record));
+        $record['note'] = $node->flag['flag_note_'. $name]['note'];
+        if (!empty($node->nid) and module_exists('token')) {
+          $flag = flag_get_flag($name);
+          $record['note'] = $flag->replace_tokens($record['note'],
+            array_flip($flag->get_labels_token_types()), $node->nid);
+        }
+        $record['tid'] = $node->flag['flag_note_'. $name]['tid'];
+        if ($note) {
+          $record['fnid'] = $note['fnid'];
+          flag_note_update_note($record);
+        }
+        else {
+          flag_note_insert_note($record);
+        }
+      }
+    }
+  }
 }
