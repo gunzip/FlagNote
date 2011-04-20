@@ -692,7 +692,7 @@ function flag_note_form_alter(&$form, &$form_state, $form_id) {
           }
         }
         $form['flag']['flag_note_'. $name] = current(
-                _flag_note_form(&$form_state, 'flag', $name, $form['#node']->nid, $note));
+                _flag_note_form($form_state, 'flag', $name, $form['#node']->nid, $note));
         $form['flag']['flag_note_'. $name]['#weight'] = $weight++;
         $form['flag']['flag_note_'. $name]['#tree'] = TRUE;
         unset($form['flag']['flag_note_'. $name]['submit']);
