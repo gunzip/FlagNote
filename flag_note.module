@@ -398,8 +398,10 @@ function flag_note_page($action, $flag_name, $content_id) {
 function _flag_note_form(&$form_state, $action, $flag_name, $content_id, $flag_note = NULL) {
   $form = array();
   $flag = flag_get_flag($flag_name);
-
-  drupal_set_title($flag->flag_note_title);
+  
+  if (arg(2) != 'edit') {
+    drupal_set_title($flag->flag_note_title);
+  }
 
   $form['flag_note'] = array(
     '#type' => 'fieldset',
