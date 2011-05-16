@@ -149,8 +149,9 @@ function flag_note_edit_form(&$form_state, $fnid) {
   }
   $flag = flag_get_flag(NULL, $flag_note['fid']);
   $form = _flag_note_form($form_state, NULL, $flag->name, NULL, $flag_note);
-  $form['fnid'] = array('#type' => 'value', '#value' => $flag_note['fnid']);
-  $form['cancel'] = array('#value' => l(t('Cancel'), $_GET['destination']));
+  $form['flag_note']['fnid'] = array('#type' => 'value', '#value' => $flag_note['fnid']);
+  $form['flag_note']['submit'] = array('#type' => 'submit', '#value' => t('Submit'));
+  $form['flag_note']['cancel'] = array('#value' => l(t('Cancel'), $_GET['destination']));
   return $form;
 }
 
@@ -395,11 +396,12 @@ function flag_note_page($action, $flag_name, $content_id) {
 /**
  * Helper function shared between flag note edit and create form.
  */
-function _flag_note_form(&$form_state, $action, $flag_name, $content_id, $flag_note = NULL) {
+function _flag_note_form(&$form_state, $action, $flag_name, $content_id, 
+                          $flag_note = NULL, $nodeform = FALSE) {
   $form = array();
   $flag = flag_get_flag($flag_name);
   
-  if (arg(2) != 'edit') {
+  if (!$nodeform) {
     drupal_set_title($flag->flag_note_title);
   }
 
@@ -467,7 +469,7 @@ function _flag_note_form(&$form_state, $action, $flag_name, $content_id, $flag_n
       '#rows' => 5,
       '#description' => filter_xss($flag->flag_note_help),
       '#weight' => -1,
-      '#required' => TRUE,
+      '#required' => !$nodeform,
       '#default_value' => $default_value,
     );
 
@@ -477,7 +479,7 @@ function _flag_note_form(&$form_state, $action, $flag_name, $content_id, $flag_n
     }
   }
 
-  if (is_numeric($content_id)) {
+  if (is_numeric($content_id) and !$nodeform) {
     $form['flag_note']['submit'] = array(
       '#type' => 'submit',
       '#value' => $flag->get_label('flag_short', $content_id),
@@ -694,10 +696,9 @@ function flag_note_form_alter(&$form, &$form_state, $form_id) {
           }
         }
         $form['flag']['flag_note_'. $name] = current(
-                _flag_note_form($form_state, 'flag', $name, $form['#node']->nid, $note));
+                _flag_note_form($form_state, 'flag', $name, $form['#node']->nid, $note, TRUE));
         $form['flag']['flag_note_'. $name]['#weight'] = $weight++;
         $form['flag']['flag_note_'. $name]['#tree'] = TRUE;
-        unset($form['flag']['flag_note_'. $name]['submit']);
       }
     }
   }
