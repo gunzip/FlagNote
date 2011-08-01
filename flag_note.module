@@ -691,7 +691,10 @@ function flag_note_form_alter(&$form, &$form_state, $form_id) {
           $userflag = (array) flag_get_user_flags($flag->content_type, $form['#node']->nid);
           if ($userflag[$name]) {
             $record = (array) $userflag[$name];
-            $record['uid']  = $GLOBALS['user']->uid;
+            // If it's a global flag avoid searching by uid
+            if (empty($userflag[$name]->uid)) {
+              unset ($record['uid']);
+            }
             $note = array_pop(flag_note_get_notes($record));
           }
         }
