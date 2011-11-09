@@ -396,11 +396,11 @@ function flag_note_page($action, $flag_name, $content_id) {
 /**
  * Helper function shared between flag note edit and create form.
  */
-function _flag_note_form(&$form_state, $action, $flag_name, $content_id, 
+function _flag_note_form(&$form_state, $action, $flag_name, $content_id,
                           $flag_note = NULL, $nodeform = FALSE) {
   $form = array();
   $flag = flag_get_flag($flag_name);
-  
+
   if (!$nodeform) {
     drupal_set_title($flag->flag_note_title);
   }
@@ -718,7 +718,12 @@ function _flag_note_node_form_submit($node) {
       if ($userflag[$name]) {
         $record = (array) $userflag[$name];
         $record['uid'] = $GLOBALS['user']->uid;
-        $note = array_pop(flag_note_get_notes($record));
+        $search = $record;
+        // If it's a global flag just overwrites old note
+        if (empty($userflag[$name]->uid)) {
+          unset ($search['uid']);
+        }
+        $note = array_pop(flag_note_get_notes($search));
         $record['note'] = $node->flag['flag_note_'. $name]['note'];
         if (!empty($node->nid) and module_exists('token')) {
           $flag = flag_get_flag($name);
