@@ -577,9 +577,19 @@ function flag_note_flag_link_types() {
  * Build the callback link for flags.
  */
 function flag_note_flag_link($flag, $action, $content_id) {
+  global $user;
+  
   $token = flag_get_token($content_id);
+  $href = "flagnote/action/$action/$flag->name/$content_id";
+  
+  if (module_exists('flag_abuse') and user_access('reset abuse flags', $user)
+      and in_array($flag->name, array('abuse_node', 'abuse_comment', 'abuse_user')))
+  {
+    $href = "flag/$action/$flag->name/$content_id";
+  }
+  
   return array(
-    'href' => "flagnote/action/$action/$flag->name/$content_id",
+    'href' => $href,
     'query' => drupal_get_destination() .'&token='. $token,
   );
 }
