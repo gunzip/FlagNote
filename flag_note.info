@@ -1,5 +1,10 @@
-name = Flag Note
-description = Allows users to add a note while flagging content with the Flag module
-core = 6.x
+name = Flag note
+description = Allows users to add notes while flagging content with the Flag module
+core = 7.x
 dependencies[] = flag
+files[] = includes/views_handler_field_flag_note_link_delete.inc
+files[] = includes/views_handler_field_flag_note_link_edit.inc
+files[] = includes/views_handler_field_flag_note_link_js_edit.inc
 package = Flags
+
+
