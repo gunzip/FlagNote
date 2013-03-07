@@ -35,7 +35,9 @@
     <a href="<?php print $link_href; ?>" title="<?php print $link_title; ?>" class="<?php print $flag_classes ?>" rel="nofollow"><?php print $link_text; ?></a><span class="flag-throbber">&nbsp;</span>
   <?php else: ?>
     <span class="<?php print $flag_classes ?>"><?php print $link_text; ?></span>
-    <?php print $flag_note_js_form; ?>
+    <?php if (isset($flag_note_js_form)): ?>
+      <?php print $flag_note_js_form; ?>
+    <?php endif; ?>
   <?php endif; ?>
   <?php if ($after_flagging): ?>
     <span class="flag-message flag-<?php print $status; ?>-message">
